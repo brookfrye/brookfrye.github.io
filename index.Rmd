@@ -12,7 +12,7 @@ library(leaflet)
 ```
 
 
-```{r echo=FALSE}
+```{r echo=FALSE, warning=FALSE}
 hl <- fread("https://data.cityofnewyork.us/resource/kfyu-46k5.csv")
 hl <- hl[casetype %in% c("Access Warrant - lead", "Lead False Certification"), ]
 hl[, latitude := as.numeric(latitude)]
