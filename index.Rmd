@@ -1,0 +1,62 @@
+---
+title: "HL"
+author: "Brook Frye"
+date: "12/9/2018"
+output: html_document
+---
+
+```{r include=FALSE}
+library(zoo)
+library(data.table)
+library(leaflet)
+```
+
+
+```{r echo=FALSE}
+hl <- fread("https://data.cityofnewyork.us/resource/kfyu-46k5.csv")
+hl <- hl[casetype %in% c("Access Warrant - lead", "Lead False Certification"), ]
+hl[, latitude := as.numeric(latitude)]
+hl[, longitude := as.numeric(longitude)]
+hl[, caseopendate := substr(caseopendate, 1, 10)]
+hl[, caseopendate := strptime(caseopendate, format = "%m/%d/%Y", tz ="EST")]
+hl[, date := as.yearmon(caseopendate)]
+hl[, year := year(date)]
+yrs <- unique(hl$year)
+yrs <- yrs[!is.na(yrs)]
+
+
+pal <- colorFactor("viridis",
+                   domain = unique(hl$casetype))
+
+# let's try with layers
+l <- leaflet() %>% addProviderTiles("CartoDB.Positron")
+
+hl.yrs <- split(hl, hl$year)
+
+names(hl.yrs) %>%
+  purrr::walk(function(df) {
+    l <<- l %>%
+      addCircleMarkers(data=hl.yrs[[df]],
+                       lng=~longitude, lat=~latitude,
+                       color = ~pal(casetype), 
+                       popup = ~as.character(casetype),
+                       group = df,
+                       clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = T),
+                       label = ~as.character(respondent), 
+                       labelOptions = labelOptions(noHide = F,
+                                                   direction = 'auto'))
+  })
+
+
+l %>%
+  addLayersControl(
+    overlayGroups = names(hl.yrs),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+
+
+
+l
+```
+
